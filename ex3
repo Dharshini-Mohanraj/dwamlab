@@ -1,0 +1,117 @@
+
+# EXPERIMENT 3: PYTHON PACKAGES FOR DATA MINING
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from scipy import stats
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import accuracy_score, confusion_matrix
+from mlxtend.preprocessing import TransactionEncoder
+from mlxtend.frequent_patterns import apriori
+
+# 1. Create student dataset
+data = {
+    "Study_Hours": [2, 3, 1, 4, 5, 2, 6, 1, 3, 4],
+    "Attendance": [65, 70, 55, 80, 85, 60, 90, 50, 75, 82],
+    "Internal_Mark": [60, 65, 40, 70, 75, 45, 85, 35, 60, 72],
+    "Assignment_Mark": [65, 68, 42, 72, 78, 48, 88, 38, 62, 75],
+    "Final_Mark": [52, 60, 45, 70, 78, 50, 85, 40, 63, 73],
+    "Result": ["Pass", "Pass", "Fail", "Pass", "Pass",
+               "Pass", "Pass", "Fail", "Pass", "Pass"]
+}
+
+df = pd.DataFrame(data)
+print("STUDENT DATASET")
+print(df)
+
+# 2. NumPy: Calculate basic statistics
+marks = np.array(df["Final_Mark"])
+print("\nNUMPY")
+print("Mean:", np.mean(marks))
+print("Maximum:", np.max(marks))
+print("Minimum:", np.min(marks))
+print("Standard deviation:", np.std(marks))
+
+# 3. Pandas: Display summary statistics
+print("\nPANDAS SUMMARY")
+print(df.describe())
+
+# 4. Matplotlib: Histogram
+plt.hist(df["Final_Mark"], bins=5, edgecolor="black")
+plt.xlabel("Final Mark")
+plt.ylabel("Number of Students")
+plt.title("Distribution of Final Marks")
+plt.show()
+
+# 5. Matplotlib: Scatter plot
+plt.scatter(df["Study_Hours"], df["Final_Mark"])
+plt.xlabel("Study Hours")
+plt.ylabel("Final Mark")
+plt.title("Study Hours vs Final Marks")
+plt.grid(True)
+plt.show()
+
+# 6. Seaborn: Box plot
+sns.boxplot(x="Result", y="Final_Mark", data=df)
+plt.title("Final Marks by Result")
+plt.show()
+
+# 7. Seaborn: Correlation heatmap
+numeric = df[[
+    "Study_Hours", "Attendance", "Internal_Mark",
+    "Assignment_Mark", "Final_Mark"
+]]
+sns.heatmap(numeric.corr(), annot=True, fmt=".2f")
+plt.title("Correlation Heatmap")
+plt.show()
+
+# 8. SciPy: Correlation and Z-scores
+r, p = stats.pearsonr(df["Study_Hours"], df["Final_Mark"])
+print("\nSCIPY")
+print("Correlation:", round(r, 3))
+print("P-value:", round(p, 4))
+print("First five Z-scores:",
+      np.round(stats.zscore(df["Final_Mark"])[:5], 2))
+
+# 9. Scikit-learn: Train and test a decision tree
+X = df[[
+    "Study_Hours", "Attendance",
+    "Internal_Mark", "Assignment_Mark"
+]]
+y = df["Result"]
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.3, random_state=42
+)
+
+model = DecisionTreeClassifier(random_state=42, max_depth=3)
+model.fit(X_train, y_train)
+y_pred = model.predict(X_test)
+
+print("\nSCIKIT-LEARN")
+print("Predicted:", y_pred.tolist())
+print("Actual:", y_test.tolist())
+print("Accuracy:", accuracy_score(y_test, y_pred))
+print("Confusion Matrix:")
+print(confusion_matrix(y_test, y_pred, labels=["Fail", "Pass"]))
+
+# 10. Mlxtend: Find frequent itemsets
+transactions = [
+    ["Milk", "Bread"],
+    ["Milk", "Bread", "Butter"],
+    ["Bread", "Butter"],
+    ["Milk", "Bread", "Butter"],
+    ["Milk", "Butter"]
+]
+
+te = TransactionEncoder()
+encoded = te.fit(transactions).transform(transactions)
+onehot = pd.DataFrame(encoded, columns=te.columns_)
+
+print("\nMLXTEND FREQUENT ITEMSETS")
+print(apriori(onehot, min_support=0.6, use_colnames=True))
+
+print("\nExperiment 3 completed successfully.")
