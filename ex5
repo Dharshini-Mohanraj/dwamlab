@@ -1,0 +1,107 @@
+
+# EXPERIMENT 5: APRIORI ALGORITHM
+
+import pandas as pd
+import matplotlib.pyplot as plt
+from mlxtend.preprocessing import TransactionEncoder
+from mlxtend.frequent_patterns import apriori, association_rules
+
+# 1. Enter transactions
+transactions = [
+    ["Milk", "Egg", "Bread", "Butter"],
+    ["Milk", "Butter", "Egg", "ketchup"],
+    ["Bread", "Butter", "ketchup"],
+    ["Milk", "Bread", "Butter"],
+    ["Bread", "Butter", "Cookies"],
+    ["Milk", "Bread", "Butter", "Cookies"],
+    ["Milk", "Cookies"],
+    ["Milk", "Bread", "Butter"],
+    ["Bread", "Butter", "Egg", "Cookies"],
+    ["Milk", "Butter", "Bread"],
+    ["Milk", "Bread", "Butter"],
+    ["Milk", "Bread", "Cookie", "ketchup"]
+]
+
+print("Number of transactions:", len(transactions))
+
+# 2. Clean item names
+clean = []
+
+for t in transactions:
+    items = [item.strip().capitalize() for item in t]
+    items = ["Cookies" if item == "Cookie" else item
+             for item in items]
+    clean.append(sorted(set(items)))
+
+print("\nCleaned Transactions:")
+for number, items in enumerate(clean, 1):
+    print(number, items)
+
+# 3. Convert transactions into a one-hot table
+te = TransactionEncoder()
+encoded = te.fit(clean).transform(clean)
+onehot = pd.DataFrame(encoded, columns=te.columns_)
+
+print("\nOne-Hot Transaction Table:")
+print(onehot.astype(int))
+
+# 4. Count each item and draw a bar chart
+counts = onehot.sum().sort_values(ascending=False)
+print("\nItem Counts:")
+print(counts)
+
+counts.plot(kind="bar", figsize=(7, 4))
+plt.axhline(0.4 * len(onehot), linestyle="--")
+plt.ylabel("Number of Transactions")
+plt.title("Item Counts")
+plt.xticks(rotation=0)
+plt.show()
+
+# 5. Generate frequent itemsets
+freq = apriori(onehot, min_support=0.4, use_colnames=True)
+
+display_freq = freq.copy()
+display_freq["itemsets"] = display_freq["itemsets"].apply(
+    lambda items: ", ".join(sorted(items))
+)
+
+print("\nFrequent Itemsets:")
+print(display_freq.round(3).to_string(index=False))
+
+# 6. Generate association rules with lift >= 1
+rules = association_rules(
+    freq, metric="lift", min_threshold=1
+)
+
+show = rules[[
+    "antecedents", "consequents",
+    "support", "confidence", "lift"
+]].copy()
+
+for column in ["antecedents", "consequents"]:
+    show[column] = show[column].apply(
+        lambda items: ", ".join(sorted(items))
+    )
+
+print("\nAssociation Rules (Lift >= 1):")
+print(show.round(3).to_string(index=False))
+
+# 7. Generate rules with minimum confidence 0.75
+rules_conf = association_rules(
+    freq, metric="confidence", min_threshold=0.75
+)
+
+show_conf = rules_conf[[
+    "antecedents", "consequents",
+    "support", "confidence", "lift"
+]].copy()
+
+for column in ["antecedents", "consequents"]:
+    show_conf[column] = show_conf[column].apply(
+        lambda items: ", ".join(sorted(items))
+    )
+
+print("\nAssociation Rules (Confidence >= 0.75):")
+print(show_conf.round(3).to_string(index=False))
+
+print("\nExperiment 5 completed successfully.")
